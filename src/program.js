@@ -1,23 +1,8 @@
 var fs = require('fs');
 
-//main backup locations
-var dirs = [];
-for (var i = 2; i< process.argv.length; i++) {
-    dirs.push(process.argv[i]);
-}
+var gameInfo = [];
 
-//list of folders for every group directory arg
-var dirResults = new Array(dirs.length);
-for (var j = 0; j < dirResults.length; j++) {
-    dirResults[j] = null;
-}
-
-//depending on where backup is located, instructions on how to use backup
-var notesObject = {};
-//json object that will eventually be output into a file
-var jsonObject = [];
-//full path locations to every game backup folder
-var gameDirs = [];
+var BACKUPS_PATH = require('../data/backups-path');
 
 //start
 startDirScanning();
@@ -36,107 +21,34 @@ function padNumber(number) {
  **********************************************************************************************************************/
 
 /**
- * Translates the array of game folders, divided by directory (length = total directories scanned), into a an array
- * of JSON objects
- * @param dirResultsParam array of game folder names
- */
-function constructDirResultsJson2(dirResultsParam) {
-    var singleJsonObject = {};
-    for (var i = 0; i < dirResultsParam.length; i++) {
-        var dirResult = dirResultsParam[i];
-        for (var j = 0; j < dirResult.length; j++) {
-            singleJsonObject = {};
-            singleJsonObject.name = dirResult[j];
-            singleJsonObject.status = true;
-            singleJsonObject.date = "";
-            singleJsonObject.notes = notesObject[dirResult[j]];
-            jsonObject.push(singleJsonObject);
-        }
-    }
-}
-
-/**
  * Scan main backup locations to get sub-folder names
  * Once we have all the folder names, then call startGameDirScanning to get specific information about the folders
  */
 function startDirScanning() {
-    for (var i = 0; i < dirs.length; i++) {
-        (function (i) {
-            fs.readdir(dirs[i], function (err, list) {
-                console.log("Scanning directory: " + dirs[i]);
+    fs.readdir(BACKUPS_PATH, function (err, gameList) {
+       var gamesProcessed = 0;
+        for (var i = 0; i < gameList.length; i++) {
+            (function(j) {
+                var game = gameList[j];
+                var installerPath = BACKUPS_PATH + "/" + game + "/Installer";
+                fs.readdir(installerPath, function(err, gameFolder) {
+                    if (!err && game.indexOf("Z - Template") === -1) {
+                        gameInfo.push({
+                            "name": game,
+                            "date": null,
+                            "notes": null,
+                            "path": installerPath
+                        });
+                    }
+                    gamesProcessed++;
 
-                var k;
-                //steam game
-                if (dirs[i].indexOf("Steam") !== -1) {
-                    for (k = 0; k < list.length; k++) {
-                        notesObject[list[k]] = "Steam Game";
+                    if (gamesProcessed === gameList.length - 1) {
+                        startGameDirScanning();
                     }
-                }
-                //origin game
-                else if (dirs[i].indexOf("Origin") !== -1) {
-                    //remove useless cache entry that Origin puts in the directory
-                    var cacheIndex = 0;
-                    for (k = 0; k < list.length; k++) {
-                        if (list[i] === "cache") {
-                            cacheIndex = k - 1;
-                        }
-                    }
-                    list.splice(cacheIndex, 1);
-
-                    for (k = 0; k < list.length; k++) {
-                        notesObject[list[k]] = "Start Origin install, then copy files in";
-                    }
-
-                }
-                //ubisoft game
-                else if (dirs[i].indexOf("UPlay") !== -1) {
-                    for (k = 0; k < list.length; k++) {
-                        notesObject[list[k]] = "Start UPlay install, then copy files in";
-                    }
-                }
-                //blizard game
-                else if (dirs[i].indexOf("Battle.net") !== -1) {
-                    for (k = 0; k < list.length; k++) {
-                        notesObject[list[k]] = "Copy to disc and link in Battle.net client";
-                    }
-                }
-                //other game
-                else if (dirs[i].indexOf("Other") !== -1) {
-                    for (k = 0; k < list.length; k++) {
-                        notesObject[list[k]] = "Other Game";
-                    }
-                }
-
-                //debug log
-                var listFoundString = "";
-                for (k = 0; k < list.length; k++) {
-                    if (k === list.length - 1) {
-                        listFoundString += list[k];
-                    }
-                    else {
-                        listFoundString += list[k] + ", ";
-                    }
-                }
-                console.log("Game backups found: " + listFoundString);
-
-                dirResults[i] = list;
-                //construct/append to an array with full paths to all of the folders
-                constructGamesDirArray(list, dirs[i]);
-
-                var resultCount = 0;
-                for (var j = 0; j < dirResults.length; j++) {
-                    if (dirResults[j] !== null) {
-                        resultCount++;
-                    }
-                }
-
-                if (resultCount == dirResults.length) {
-                    constructDirResultsJson2(dirResults);
-                    startGameDirScanning();
-                }
-            });
-        })(i);
-    }
+                });
+            })(i);
+        }
+    });
 }
 
 /**********************************************************************************************************************
@@ -155,35 +67,7 @@ function constructGamesDirArray(dirResultsParam, parentDirectory) {
     }
 
     for (var i = 0; i < dirResultsParam.length; i++) {
-        gameDirs.push(parentDirectory + "/" + dirResultsParam[i]);
-    }
-}
-
-/**
- * Set the modified date of a game's JSON entry to that which we obtained using fs.stat
- * @param gameDir full directory to a game backup folder
- * @param modDate modified date in String form
- */
-function setModDate(gameDir, modDate) {
-    var gameName = null;
-
-    //extract game name from the directory
-    for(var i = 2; i < process.argv.length; i++) {
-        if (gameDir.indexOf(process.argv[i]) !== -1) {
-            gameName = gameDir.substr(process.argv[i].length + 1, gameDir.length);
-            break;
-        }
-    }
-
-
-    //did it find a game and parse correctly?
-    if (gameName) {
-        //loop through json object, match game name, and set mod date of the folder, representing backup date
-        for (var j = 0; j < jsonObject.length; j++) {
-            if (gameName === jsonObject[j].name) {
-                jsonObject[j].date = modDate;
-            }
-        }
+        gameInfo.push(parentDirectory + "/" + dirResultsParam[i]);
     }
 }
 
@@ -191,7 +75,13 @@ function setModDate(gameDir, modDate) {
  * Save JSON after scanning all game dirs
  */
 function finish() {
-    fs.writeFile('games.json', JSON.stringify(jsonObject), function(err) {
+    for (var i = 0; i < gameInfo.length; i++) {
+        delete gameInfo[i].path;
+    }
+
+    console.log(gameInfo);
+
+    fs.writeFile('games.json', JSON.stringify(gameInfo), function(err) {
         if (err) {
             throw err;
         }
@@ -204,15 +94,21 @@ var gameDirsProcessed = 0;
 
 //read all information about folders
 function startGameDirScanning() {
-    for (var i = 0; i < gameDirs.length; i++) {
+    for (var i = 0; i < gameInfo.length; i++) {
         (function (i) {
-            fs.stat(gameDirs[i], function (err, stats) {
-                var modDate = padNumber(stats.mtime.getMonth() + 1) + "/" + padNumber(stats.mtime.getDate()) + "/" + stats.mtime.getFullYear();
-                setModDate(gameDirs[i], modDate);
+            var game = gameInfo[i];
+            fs.stat(game.path + "/" + game.name, function (err, stats) {
+                if (!err) {
+                    game.date = padNumber(stats.mtime.getMonth() + 1) + "/" + padNumber(stats.mtime.getDate()) + "/" + stats.mtime.getFullYear();
+                    game.status = true;
+                }
+                else {
+                    game.status = false;
+                }
                 gameDirsProcessed++;
 
                 //processed all dirs?
-                if (gameDirsProcessed === gameDirs.length) {
+                if (gameDirsProcessed === gameInfo.length) {
                     finish();
                 }
             });

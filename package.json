@@ -1,0 +1,19 @@
+{
+  "name": "game-backup-scanner",
+  "version": "1.0.0",
+  "description": "A little experiment I coded to learn Node and scan my backup folders for Video Game backups and output a JSON file.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryanlutgen/GameBackupScanner.git"
+  },
+  "author": "Ryan Lutgen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ryanlutgen/GameBackupScanner/issues"
+  },
+  "homepage": "https://github.com/ryanlutgen/GameBackupScanner#readme"
+}
