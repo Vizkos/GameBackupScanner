@@ -25,13 +25,13 @@ function padNumber(number) {
  * Once we have all the folder names, then call startGameDirScanning to get specific information about the folders
  */
 function startDirScanning() {
-    fs.readdir(BACKUPS_PATH, function (err, gameList) {
+    fs.readdir(BACKUPS_PATH, (err, gameList) => {
        var gamesProcessed = 0;
         for (var i = 0; i < gameList.length; i++) {
             (function(j) {
                 var game = gameList[j];
-                var installerPath = BACKUPS_PATH + "/" + game + "/Installer";
-                fs.readdir(installerPath, function(err, gameFolder) {
+                var installerPath = `${BACKUPS_PATH}/${game}/Installer`;
+                fs.readdir(installerPath, (err, gameFolder) => {
                     if (!err && game.indexOf("Z - Template") === -1) {
                         gameInfo.push({
                             "name": game,
@@ -81,7 +81,7 @@ function finish() {
 
     console.log(gameInfo);
 
-    fs.writeFile('games.json', JSON.stringify(gameInfo), function(err) {
+    fs.writeFile('games.json', JSON.stringify(gameInfo), (err) => {
         if (err) {
             throw err;
         }
@@ -97,7 +97,7 @@ function startGameDirScanning() {
     for (var i = 0; i < gameInfo.length; i++) {
         (function (i) {
             var game = gameInfo[i];
-            fs.stat(game.path + "/" + game.name, function (err, stats) {
+            fs.stat(`${game.path}/${game.name}`, (err, stats) => {
                 if (!err) {
                     game.date = padNumber(stats.mtime.getMonth() + 1) + "/" + padNumber(stats.mtime.getDate()) + "/" + stats.mtime.getFullYear();
                     game.status = true;
