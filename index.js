@@ -1,6 +1,9 @@
 var path = require('path');
 var steamInfo = require('./src/steamInfo');
+var gameDirScan = require('./src/gameDirScan');
 
-steamInfo.getGameInfo(path.resolve("./data"), function() {
-    console.log("done");
+var dataPath = path.resolve("./data");
+
+steamInfo.getGameInfo(dataPath, function(ownedGames) {
+    gameDirScan.scanGameDir(dataPath, ownedGames);
 });

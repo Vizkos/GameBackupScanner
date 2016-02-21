@@ -28,7 +28,7 @@ function parseGameInfo(games, savePath, callback) {
     });
 
     fs.writeFileSync(savePath + "/ownedGames.json", JSON.stringify(ownedGames, null, 2), 'utf8');
-    callback();
+    callback(ownedGames);
 }
 
 module.exports = {
