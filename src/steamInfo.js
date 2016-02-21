@@ -6,6 +6,7 @@ var STEAM_KEY = require('./../data/steam-api-key');
 var USER = require('./../data/steam-user');
 
 function getOwnedGames(steamid, savePath, callback) {
+    console.log("fetching owned games...");
     http.get(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${STEAM_KEY}&include_played_free_games=1&include_appinfo=1&steamid=${steamid}&format=json`, (response) => {
         var responseStr = "";
         response.on('data', function(chunk) {
@@ -33,6 +34,7 @@ function parseGameInfo(games, savePath, callback) {
 
 module.exports = {
     getGameInfo: function(savePath, callback) {
+        console.log("fetching steam id from vanity url...");
         http.get(`http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${STEAM_KEY}&vanityurl=${USER}`, (response) => {
             var responseStr = "";
             response.on('data', function(chunk) {
